@@ -8,18 +8,28 @@
   <script src="config.js" defer></script>
   <script src="js/sheets.js" defer></script>
   <script src="js/admin.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 </head>
 <body class="admin-page">
+  <!-- LANG BAR -->
+  <div class="lang-bar">
+    <span class="lang-bar-note" id="lbn" data-en="Merchant admin" data-hi="मर्चेंट एडमिन पोर्टल">मर्चेंट एडमिन पोर्टल</span>
+    <div class="lang-seg">
+      <button id="bEn" onclick="setLang('en')">English</button>
+      <button class="on" id="bHi" onclick="setLang('hi')">हिन्दी</button>
+    </div>
+  </div>
+
   <main>
     <section id="pinOverlay" class="auth-screen">
       <div class="auth-card">
-        <p class="eyebrow">Merchant admin</p>
-        <h1>Unlock admin</h1>
+        <p class="eyebrow" data-en="Merchant admin" data-hi="मर्चेंट एडमिन">Merchant admin</p>
+        <h1 data-en="Unlock admin" data-hi="एडमिन अनलॉक करें">Unlock admin</h1>
         <label class="field">
-          <span>PIN</span>
-          <input type="password" id="pinInput" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter PIN" />
+          <span data-en="PIN" data-hi="पिन (PIN)">PIN</span>
+          <input type="password" id="pinInput" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter PIN / पिन डालें" />
         </label>
-        <button id="pinBtn" class="btn btn-primary" type="button">Unlock</button>
+        <button id="pinBtn" class="btn btn-primary" type="button">Unlock <span class="btn-hi">/ अनलॉक करें</span></button>
         <p id="pinError" class="msg" aria-live="polite"></p>
       </div>
     </section>
@@ -27,26 +37,26 @@
     <section id="mainContent" class="shell hidden">
       <header class="hero">
         <div>
-          <p class="eyebrow">Seema Silai Centre</p>
-          <h1>Simple admin</h1>
+          <p class="eyebrow" data-en="Seema Silai Centre" data-hi="सीमा सिलाई सेंटर">Seema Silai Centre</p>
+          <h1 data-en="Admin Dashboard" data-hi="एडमिन डैशबोर्ड">Admin Dashboard</h1>
         </div>
         <div class="hero-actions">
-          <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh</button>
-          <button id="exportCsvBtn" class="btn btn-secondary" type="button">Export CSV</button>
+          <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh <span class="btn-hi">/ रिफ्रेश करें</span></button>
+          <button id="exportCsvBtn" class="btn btn-secondary" type="button">Export CSV <span class="btn-hi">/ Excel डाउनलोड</span></button>
         </div>
       </header>
 
       <section class="summary-grid" aria-label="Dashboard summary">
         <article class="stat-card">
-          <span>Total orders</span>
+          <span data-en="Total orders" data-hi="कुल ऑर्डर्स">Total orders</span>
           <strong id="totalOrders">0</strong>
         </article>
         <article class="stat-card">
-          <span>Pending amount</span>
+          <span data-en="Pending amount" data-hi="बाकी पेमेंट">Pending amount</span>
           <strong id="totalPending">₹0</strong>
         </article>
         <article class="stat-card">
-          <span>Today's orders</span>
+          <span data-en="Today's orders" data-hi="आज के ऑर्डर्स">Today's orders</span>
           <strong id="todayOrders">0</strong>
         </article>
       </section>
@@ -54,10 +64,10 @@
       <section class="panel">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Priority work</p>
-            <h2>Pending payments</h2>
+            <p class="eyebrow" data-en="Priority work" data-hi="ज़रूरी काम">Priority work</p>
+            <h2 data-en="Pending payments" data-hi="बाकी पेमेंट वाले ऑर्डर्स">Pending payments</h2>
           </div>
-          <p class="section-note">Mark paid or send a reminder from each card.</p>
+          <p class="section-note" data-en="Mark paid or send a reminder from each card." data-hi="हर कार्ड से पेमेंट दर्ज करें या रिमाइंडर भेजें।">Mark paid or send a reminder from each card.</p>
         </div>
         <div id="pendingList" class="stack"></div>
         <p id="pendingMsg" class="msg" aria-live="polite"></p>
@@ -66,10 +76,10 @@
       <section class="panel">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Completed</p>
-            <h2>Paid orders</h2>
+            <p class="eyebrow" data-en="Completed" data-hi="पूरा हुआ">Completed</p>
+            <h2 data-en="Paid orders" data-hi="पूरे पैसे मिल गए (Paid)">Paid orders</h2>
           </div>
-          <p class="section-note">Orders with full payment received.</p>
+          <p class="section-note" data-en="Orders with full payment received." data-hi="वो ऑर्डर्स जिनका पूरा पेमेंट मिल चुका है।">Orders with full payment received.</p>
         </div>
         <div id="completedList" class="stack"></div>
         <p id="completedMsg" class="msg" aria-live="polite"></p>
@@ -79,23 +89,53 @@
         <article class="panel">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Fast entry</p>
-              <h2>Add multiple orders</h2>
+              <p class="eyebrow" data-en="Fast entry" data-hi="फ़ास्ट एंट्री">Fast entry</p>
+              <h2 data-en="Add multiple orders" data-hi="एक साथ कई ऑर्डर्स जोड़ें">Add multiple orders</h2>
             </div>
           </div>
+
+          <!-- Intelligent AI Voice Order Assistant -->
+          <article class="voice-assistant-panel">
+            <h3 class="eyebrow" style="margin: 0; color: var(--accent);" data-en="🎙️ AI Voice Order Assistant" data-hi="🎙️ AI वॉइस ऑर्डर असिस्टेंट">🎙️ AI Voice Order Assistant</h3>
+            <div class="assistant-mic-wrap">
+              <button type="button" id="assistantMicBtn" class="btn-assistant-mic" title="Start Voice Dictation">🎙️</button>
+              <p id="assistantStatusText" class="voice-assistant-status" data-en="Tap the microphone to speak a whole order sentence!" data-hi="ऑर्डर बोलने के लिए माइक दबाएं!">Tap the microphone to speak a whole order sentence!</p>
+            </div>
+            
+            <details class="voice-assistant-guide">
+              <summary style="font-weight: 700; cursor: pointer; color: var(--accent);" data-en="💡 Click to see speaking tips" data-hi="💡 बोलने के टिप्स देखने के लिए क्लिक करें">💡 Click to see speaking tips</summary>
+              <div style="margin-top: 8px; font-size: 0.82rem; line-height: 1.45;">
+                <strong data-en="English Format:" data-hi="अंग्रेजी तरीका (English):">English Format:</strong>
+                <ul>
+                  <li data-en='Say: "Order for Radha, two blouses at four hundred rupees, expected by next Friday, phone 9993660152"' data-hi='बोलें: "Order for Radha, two blouses at four hundred rupees, expected by next Friday, phone 9993660152"'>Say: "Order for Radha, two blouses at four hundred rupees, expected by next Friday, phone 9993660152"</li>
+                </ul>
+                <strong style="margin-top: 8px; display: block;" data-en="Hindi Format (हिन्दी तरीका):" data-hi="हिन्दी तरीका (Hindi):">Hindi Format (हिन्दी तरीका):</strong>
+                <ul>
+                  <li data-en='बोलें: "Radha ke liye do blouse char sau rupaye, due agle shukravar tak, phone number nine nine nine three six six zero one five two"' data-hi='बोलें: "Radha ke liye do blouse char sau rupaye, due agle shukravar tak, phone number nine nine nine three six six zero one five two"'>बोलें: "Radha ke liye do blouse char sau rupaye, due agle shukravar tak, phone number nine nine nine three six six zero one five two"</li>
+                </ul>
+              </div>
+            </details>
+          </article>
+
           <form id="addOrderForm" class="stack">
             <div class="stack">
-              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">Customer Info</h3>
+              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;" data-en="Customer Info" data-hi="कस्टमर की जानकारी">Customer Info</h3>
               <label class="field">
-                <span>Customer name</span>
-                <input name="customerName" id="custName" type="text" placeholder="Enter name" />
+                <span data-en="Customer name" data-hi="कस्टमर का नाम">Customer name</span>
+                <div class="input-with-mic">
+                  <input name="customerName" id="custName" type="text" placeholder="Enter name / नाम लिखें" />
+                  <button type="button" class="btn-mic" id="custNameMic" title="Speak name (Hindi/English)">🎤</button>
+                </div>
               </label>
               <label class="field">
-                <span>Phone number</span>
-                <input name="customerPhone" id="custPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits" />
+                <span data-en="Phone number" data-hi="फ़ोन नंबर">Phone number</span>
+                <div class="input-with-mic">
+                  <input name="customerPhone" id="custPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits / १० अंकों का नंबर" />
+                  <button type="button" class="btn-mic" id="custPhoneMic" title="Speak phone (Hindi/English)">🎤</button>
+                </div>
               </label>
               <label class="field">
-                <span>Due date</span>
+                <span data-en="Due date" data-hi="डिलीवरी की तारीख (Delivery Date)">Due date</span>
                 <input name="dueDate" id="dueDate" type="date" />
               </label>
             </div>
@@ -103,12 +143,12 @@
             <hr style="margin: 16px 0; border: none; border-top: 1px solid rgba(201,147,58,.15);">
 
             <div class="stack">
-              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">Order Items</h3>
+              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;" data-en="Order Items" data-hi="ऑर्डर आइटम्स">Order Items</h3>
               <div id="itemsList" class="stack"></div>
-              <button type="button" id="addItemBtn" class="btn btn-secondary">+ Add another item</button>
+              <button type="button" id="addItemBtn" class="btn btn-secondary">+ Add another item <span class="btn-hi">/ + और सामान जोड़ें</span></button>
             </div>
 
-            <button class="btn btn-primary" type="submit" style="margin-top: 12px;">Save All Orders</button>
+            <button class="btn btn-primary" type="submit" style="margin-top: 12px;">Save All Orders <span class="btn-hi">/ सारे ऑर्डर्स सेव करें</span></button>
           </form>
           <p id="addMsg" class="msg" aria-live="polite"></p>
         </article>
@@ -116,40 +156,40 @@
         <article class="panel">
           <div class="section-head">
             <div>
-              <p class="eyebrow">More</p>
-              <h2>Settings</h2>
+              <p class="eyebrow" data-en="More" data-hi="अन्य सेटिंग">More</p>
+              <h2 data-en="Settings" data-hi="सेटिंग्स">Settings</h2>
             </div>
           </div>
 
           <details class="details-card">
-            <summary>Change PIN</summary>
+            <summary data-en="Change PIN" data-hi="पिन (PIN) बदलें">Change PIN</summary>
             <div class="stack inner-stack">
               <label class="field">
-                <span>New PIN</span>
-                <input type="password" id="newPin" inputmode="numeric" placeholder="New PIN" />
+                <span data-en="New PIN" data-hi="नया पिन">New PIN</span>
+                <input type="password" id="newPin" inputmode="numeric" placeholder="New PIN / नया पिन दर्ज करें" />
               </label>
               <label class="field">
-                <span>Confirm PIN</span>
-                <input type="password" id="confirmPin" inputmode="numeric" placeholder="Confirm PIN" />
+                <span data-en="Confirm PIN" data-hi="पिन दोबारा डालें">Confirm PIN</span>
+                <input type="password" id="confirmPin" inputmode="numeric" placeholder="Confirm PIN / पिन दोबारा डालें" />
               </label>
               <div class="hero-actions">
-                <button id="savePinBtn" class="btn btn-primary" type="button">Save PIN</button>
-                <button id="resetPinBtn" class="btn btn-secondary" type="button">Reset PIN</button>
+                <button id="savePinBtn" class="btn btn-primary" type="button">Save PIN <span class="btn-hi">/ पिन सेव करें</span></button>
+                <button id="resetPinBtn" class="btn btn-secondary" type="button">Reset PIN <span class="btn-hi">/ पिन रीसेट करें</span></button>
               </div>
               <p id="pinChangeMsg" class="msg" aria-live="polite"></p>
             </div>
           </details>
 
           <details class="details-card">
-            <summary>UPI and export</summary>
+            <summary data-en="UPI and export" data-hi="UPI आईडी और एक्सपोर्ट">UPI and export</summary>
             <div class="stack inner-stack">
               <label class="field">
-                <span>UPI ID</span>
+                <span data-en="UPI ID" data-hi="यूपीआई आईडी (UPI ID)">UPI ID</span>
                 <input type="text" id="upiId" placeholder="Q183526070@ybl" />
               </label>
               <div class="hero-actions">
-                <button id="updateUpiBtn" class="btn btn-primary" type="button">Save UPI</button>
-                <button id="exportCsvBtnInline" class="btn btn-secondary" type="button">Export CSV</button>
+                <button id="updateUpiBtn" class="btn btn-primary" type="button">Save UPI <span class="btn-hi">/ UPI सेव करें</span></button>
+                <button id="exportCsvBtnInline" class="btn btn-secondary" type="button">Export CSV <span class="btn-hi">/ Excel डाउनलोड</span></button>
               </div>
               <p id="upiMsg" class="msg" aria-live="polite"></p>
             </div>
@@ -158,5 +198,64 @@
       </section>
     </section>
   </main>
+
+  <!-- OFF-SCREEN RECEIPT CAPTURE TEMPLATE FOR HTML2CANVAS -->
+  <div id="receiptCaptureTemplate" class="receipt-bill-container" style="position: absolute; left: -9999px; top: -9999px; width: 420px; z-index: -9999;">
+    <div class="receipt-bill">
+      <div class="receipt-header">
+        <span class="receipt-logo">🧵</span>
+        <h2>Seema Silai Centre</h2>
+        <p class="receipt-sub">Veena Nagar, Indore (M.P.)</p>
+        <p class="receipt-title">DIGITAL RECEIPT / बिल रसीद</p>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-meta">
+        <p><strong>Order ID / ऑर्डर ID:</strong> <span id="rOrderId">-</span></p>
+        <p><strong>Date / तारीख:</strong> <span id="rDate">-</span></p>
+        <p><strong>Customer / कस्टमर:</strong> <span id="rCustName">-</span></p>
+        <p><strong>Phone / फ़ोन:</strong> <span id="rPhone">-</span></p>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-items-section">
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th align="left">Item / आइटम</th>
+              <th align="center">Qty / मात्रा</th>
+              <th align="right">Amount / रेट</th>
+            </tr>
+          </thead>
+          <tbody id="rItemsBody">
+            <!-- Dynamic rows populated via JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-summary">
+        <div class="receipt-row">
+          <span>Total / कुल राशि:</span>
+          <span id="rTotalAmount">₹0</span>
+        </div>
+        <div class="receipt-row">
+          <span>Paid / जमा पेमेंट:</span>
+          <span id="rPaidAmount">₹0</span>
+        </div>
+        <div class="receipt-row highlight">
+          <span>Balance Due / बाकी पेमेंट:</span>
+          <span id="rBalanceDue">₹0</span>
+        </div>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-qr-section">
+        <p class="qr-text">Scan QR to Pay / भुगतान के लिए स्कैन करें</p>
+        <img id="rQrImage" src="" alt="Payment QR" style="width: 150px; height: 150px; display: block; margin: 10px auto;" />
+        <p class="upi-id-text">UPI ID: <span id="rUpiId">-</span></p>
+      </div>
+      <div class="receipt-footer">
+        <p>Thank you for your visit! / सेवा का अवसर देने के लिए धन्यवाद।</p>
+        <p class="stitch-foot">Stitched with love / प्यार से सिला हुआ ❤️</p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
