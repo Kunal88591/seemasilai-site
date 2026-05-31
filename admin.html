@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Seema Silai Centre</title>
+  <link rel="stylesheet" href="styles/admin.css">
+  <script src="config.js" defer></script>
+  <script src="js/sheets.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</head>
+<body class="admin-page">
+  <main>
+    <section id="pinOverlay" class="auth-screen">
+      <div class="auth-card">
+        <p class="eyebrow">Merchant admin</p>
+        <h1>Unlock admin</h1>
+        <label class="field">
+          <span>PIN</span>
+          <input type="password" id="pinInput" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter PIN" />
+        </label>
+        <button id="pinBtn" class="btn btn-primary" type="button">Unlock</button>
+        <p id="pinError" class="msg" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="mainContent" class="shell hidden">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Seema Silai Centre</p>
+          <h1>Simple admin</h1>
+        </div>
+        <div class="hero-actions">
+          <button id="refreshBtn" class="btn btn-secondary" type="button">Refresh</button>
+          <button id="exportCsvBtn" class="btn btn-secondary" type="button">Export CSV</button>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="Dashboard summary">
+        <article class="stat-card">
+          <span>Total orders</span>
+          <strong id="totalOrders">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Pending amount</span>
+          <strong id="totalPending">₹0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Today's orders</span>
+          <strong id="todayOrders">0</strong>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Priority work</p>
+            <h2>Pending payments</h2>
+          </div>
+          <p class="section-note">Mark paid or send a reminder from each card.</p>
+        </div>
+        <div id="pendingList" class="stack"></div>
+        <p id="pendingMsg" class="msg" aria-live="polite"></p>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Completed</p>
+            <h2>Paid orders</h2>
+          </div>
+          <p class="section-note">Orders with full payment received.</p>
+        </div>
+        <div id="completedList" class="stack"></div>
+        <p id="completedMsg" class="msg" aria-live="polite"></p>
+      </section>
+
+      <section class="grid two">
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Fast entry</p>
+              <h2>Add multiple orders</h2>
+            </div>
+          </div>
+          <form id="addOrderForm" class="stack">
+            <div class="stack">
+              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">Customer Info</h3>
+              <label class="field">
+                <span>Customer name</span>
+                <input name="customerName" id="custName" type="text" placeholder="Enter name" />
+              </label>
+              <label class="field">
+                <span>Phone number</span>
+                <input name="customerPhone" id="custPhone" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digits" />
+              </label>
+              <label class="field">
+                <span>Due date</span>
+                <input name="dueDate" id="dueDate" type="date" />
+              </label>
+            </div>
+
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid rgba(201,147,58,.15);">
+
+            <div class="stack">
+              <h3 style="font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">Order Items</h3>
+              <div id="itemsList" class="stack"></div>
+              <button type="button" id="addItemBtn" class="btn btn-secondary">+ Add another item</button>
+            </div>
+
+            <button class="btn btn-primary" type="submit" style="margin-top: 12px;">Save All Orders</button>
+          </form>
+          <p id="addMsg" class="msg" aria-live="polite"></p>
+        </article>
+
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">More</p>
+              <h2>Settings</h2>
+            </div>
+          </div>
+
+          <details class="details-card">
+            <summary>Change PIN</summary>
+            <div class="stack inner-stack">
+              <label class="field">
+                <span>New PIN</span>
+                <input type="password" id="newPin" inputmode="numeric" placeholder="New PIN" />
+              </label>
+              <label class="field">
+                <span>Confirm PIN</span>
+                <input type="password" id="confirmPin" inputmode="numeric" placeholder="Confirm PIN" />
+              </label>
+              <div class="hero-actions">
+                <button id="savePinBtn" class="btn btn-primary" type="button">Save PIN</button>
+                <button id="resetPinBtn" class="btn btn-secondary" type="button">Reset PIN</button>
+              </div>
+              <p id="pinChangeMsg" class="msg" aria-live="polite"></p>
+            </div>
+          </details>
+
+          <details class="details-card">
+            <summary>UPI and export</summary>
+            <div class="stack inner-stack">
+              <label class="field">
+                <span>UPI ID</span>
+                <input type="text" id="upiId" placeholder="Q183526070@ybl" />
+              </label>
+              <div class="hero-actions">
+                <button id="updateUpiBtn" class="btn btn-primary" type="button">Save UPI</button>
+                <button id="exportCsvBtnInline" class="btn btn-secondary" type="button">Export CSV</button>
+              </div>
+              <p id="upiMsg" class="msg" aria-live="polite"></p>
+            </div>
+          </details>
+        </article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
