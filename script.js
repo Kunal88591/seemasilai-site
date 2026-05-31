@@ -28,6 +28,152 @@
     return els[id];
   }
 
+  // ============================================================================
+  // SPEECH RECOGNITION (🎤 AUDIO INPUT) UTILITY
+  // ============================================================================
+  const numberWordsMap = {
+    // English words
+    "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+    "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+    // Hindi words
+    "शून्य": "0", "एक": "1", "दो": "2", "तीन": "3", "चार": "4",
+    "पांच": "5", "पाँच": "5", "छह": "6", "छः": "6", "सात": "7", "आठ": "8", "नौ": "9",
+    // Hinglish words
+    "shunya": "0", "ek": "1", "do": "2", "teen": "3", "char": "4", "chaar": "4",
+    "panch": "5", "paanch": "5", "chhe": "6", "che": "6", "chhah": "6", "saat": "7", "aath": "8", "nau": "9"
+  };
+
+  function parseSpokenSearchQuery(text) {
+    let cleaned = String(text || "").toLowerCase().trim();
+    
+    // Normalize "ओ आर डी" or "ओआरडी" or "order id"
+    cleaned = cleaned.replace(/(?:ओ\s*आर\s*डी|ओआरडी|order\s*id)/gi, "ORD");
+
+    // Replace spoken word digits
+    Object.keys(numberWordsMap).forEach((word) => {
+      const isEnglish = /^[a-z]+$/i.test(word);
+      const pattern = isEnglish ? `\\b${word}\\b` : word;
+      const reg = new RegExp(pattern, "g");
+      cleaned = cleaned.replace(reg, numberWordsMap[word]);
+    });
+    
+    // Clean up spaces inside the order ID like "ORD 001" -> "ORD001"
+    cleaned = cleaned.replace(/ord\s+(\d+)/gi, "ORD$1");
+    cleaned = cleaned.replace(/\s+/g, "");
+
+    return cleaned;
+  }
+
+  function setupCustomerSpeechInput() {
+    const inputElement = byId("customerQuery");
+    const micButtonElement = byId("customerMicBtn");
+    if (!inputElement || !micButtonElement) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      micButtonElement.style.display = "none";
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "hi-IN";
+
+    let isListening = false;
+
+    micButtonElement.addEventListener("click", () => {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.warn("Speech recognition already started:", err);
+        }
+      }
+    });
+
+    recognition.onstart = () => {
+      isListening = true;
+      micButtonElement.classList.add("listening");
+      const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+      micButtonElement.title = currentLang === "en" ? "Listening... Speak now!" : "सुन रहे हैं... बोलें!";
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      inputElement.value = parseSpokenSearchQuery(transcript);
+      handleCustomerSearch();
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      micButtonElement.classList.remove("listening");
+      const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+      micButtonElement.title = currentLang === "en" ? "Speak to Search" : "बोलकर खोजें";
+    };
+  }
+
+  // Expose setLang globally
+  window.setLang = function (l) {
+    localStorage.setItem("seemaCustLang", l);
+    const bEn = document.getElementById("bEn");
+    const bHi = document.getElementById("bHi");
+    if (bEn) bEn.classList.toggle("on", l === "en");
+    if (bHi) bHi.classList.toggle("on", l === "hi");
+
+    const lbn = document.getElementById("lbn");
+    if (lbn) {
+      lbn.textContent = l === "en" ? "Customer portal" : "ग्राहक ट्रैकिंग पोर्टल";
+    }
+
+    document.querySelectorAll("[data-en]").forEach((el) => {
+      const val = el.getAttribute("data-" + l);
+      if (val) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.setAttribute("placeholder", val);
+        } else {
+          el.innerHTML = val;
+        }
+      }
+    });
+
+    if (state.customerSelection) {
+      const query = String(byId("customerQuery").value || "").trim();
+      if (query) {
+        // Find matching related items to refresh the receipt with full bilingual context
+        const orderId = String(state.customerSelection.orderId || "").trim().toUpperCase();
+        const related = state.orders.filter((item) => String(item.orderId || "").trim().toUpperCase() === orderId);
+        renderCustomerReceipt(state.customerSelection, related.length ? state.orders : [state.customerSelection]);
+      }
+    }
+  };
+
+  function paymentStatusLabel(status, lang) {
+    const value = String(status || "").trim().toLowerCase();
+    if (value === "paid") {
+      return {
+        text: lang === "en" ? "Paid" : "पैसे मिल गए <span class='badge-hi'>/ Paid</span>",
+        className: "paid"
+      };
+    }
+    if (value === "partially paid" || value === "partial") {
+      return {
+        text: lang === "en" ? "Partially Paid" : "थोड़े पैसे मिले <span class='badge-hi'>/ Partial</span>",
+        className: "partial"
+      };
+    }
+    return {
+      text: lang === "en" ? "Unpaid" : "बाकी पेमेंट <span class='badge-hi'>/ Unpaid</span>",
+      className: "unpaid"
+    };
+  }
+
   function normalizePhone(value) {
     return String(value || "").replace(/\D/g, "").slice(-10);
   }
@@ -399,17 +545,33 @@
     host.classList.remove("hidden");
     const currentIndex = orderWorkflowIndex(order);
     const progressPercent = workflowSteps.length <= 1 ? 100 : Math.round((currentIndex / (workflowSteps.length - 1)) * 100);
+    
+    const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+
+    const stepData = {
+      "Ordered": { icon: "📋", labelEn: "Ordered", labelHi: "नया ऑर्डर" },
+      "In Progress": { icon: "🧵", labelEn: "In Progress", labelHi: "सिलाई जारी" },
+      "Completed": { icon: "👗", labelEn: "Completed", labelHi: "तैयार है" },
+      "Delivered": { icon: "🎁", labelEn: "Delivered", labelHi: "दे दिया" }
+    };
+
+    const statusObj = stepData[normalizeStatusLabel(order.orderStatus)] || { icon: "📋", labelEn: "Ordered", labelHi: "नया ऑर्डर" };
+    const displayStatus = currentLang === "en" ? statusObj.labelEn : statusObj.labelHi;
+
     host.innerHTML = `
       <div class="workflow-head">
         <div>
-          <strong>Order Progress</strong>
-          <p class="muted">${normalizeStatusLabel(order.orderStatus)}</p>
+          <strong data-en="Order Progress" data-hi="ऑर्डर की स्थिति">Order Progress</strong>
+          <p class="muted">${displayStatus}</p>
         </div>
-        <span class="status-pill ${statusClass(order.orderStatus)}">${normalizeStatusLabel(order.orderStatus)}</span>
       </div>
       <div class="workflow-track" aria-hidden="true"><span style="width:${progressPercent}%"></span></div>
       <div class="workflow-steps">
-        ${workflowSteps.map((step, index) => `<span class="workflow-step ${index <= currentIndex ? "active" : ""}">${step}</span>`).join("")}
+        ${workflowSteps.map((step, index) => {
+          const sd = stepData[step] || { icon: "", labelEn: step, labelHi: step };
+          const stepLabel = currentLang === "en" ? `${sd.icon} ${sd.labelEn}` : `${sd.icon} ${sd.labelHi}`;
+          return `<span class="workflow-step ${index <= currentIndex ? "active" : ""}" data-en="${sd.icon} ${sd.labelEn}" data-hi="${sd.icon} ${sd.labelHi}">${stepLabel}</span>`;
+        }).join("")}
       </div>
     `;
   }
@@ -566,7 +728,10 @@
     });
     
     const uniqueOrders = groupedByOrderId.size;
-    count.textContent = `${uniqueOrders} order${uniqueOrders === 1 ? "" : "s"} found.`;
+    const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+    count.textContent = currentLang === "en"
+      ? `${uniqueOrders} order${uniqueOrders === 1 ? "" : "s"} found.`
+      : `${uniqueOrders} ऑर्डर मिले।`;
     toggleHidden(resultsCard, !uniqueOrders);
 
     // Show one row per unique Order ID, with all items grouped
@@ -575,22 +740,105 @@
       const totalAmount = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
       const itemTypes = items.map(item => item.orderType).join(", ");
       
+      const itemsCountLabel = currentLang === "en" 
+        ? `${items.length} item${items.length > 1 ? "s" : ""}` 
+        : `${items.length} कपड़ा / आइटम`;
+      const noPhoneLabel = currentLang === "en" ? "No phone saved" : "कोई फोन नंबर नहीं";
+      const totalLabel = currentLang === "en" ? "Total" : "कुल";
+      const dueLabel = currentLang === "en" ? "Due" : "डिलीवरी डेट";
+      
+      const paymentStatusObj = paymentStatusLabel(firstItem.paymentStatus, currentLang);
+      const statusPillHtml = `<span class="status-pill ${paymentStatusObj.className}">${paymentStatusObj.text}</span>`;
+
       const row = document.createElement("article");
       row.className = "search-result";
       row.innerHTML = `
         <div class="result-head">
           <div>
             <strong>${firstItem.orderId}</strong>
-            <p>${firstItem.customerName} · ${items.length} item${items.length > 1 ? "s" : ""}</p>
+            <p>${firstItem.customerName} · ${itemsCountLabel}</p>
             <p style="font-size: 0.85rem; color: #666; margin-top: 4px;">${itemTypes}</p>
           </div>
-          <div>${statusBadge(firstItem.paymentStatus).outerHTML}</div>
+          <div>${statusPillHtml}</div>
         </div>
-        <p>${firstItem.phone || "No phone saved"} · Total: ${formatCurrency(totalAmount)} · Due ${formatDate(firstItem.dueDate)}</p>
+        <p>${firstItem.phone || noPhoneLabel} · ${totalLabel}: ${formatCurrency(totalAmount)} · ${dueLabel}: ${formatDate(firstItem.dueDate)}</p>
       `;
       row.addEventListener("click", () => renderCustomerReceipt(firstItem, orders));
       results.append(row);
     });
+  }
+
+  async function generateCustomerReceiptImage(order, allOrderItems) {
+    console.log("📸 Generating receipt image for:", order.orderId);
+
+    // Calculate totals
+    const totalAmount = allOrderItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const totalPaidAmount = allOrderItems.reduce((sum, item) => sum + Number(item.paidAmount || 0), 0);
+    const totalRemaining = Math.max(0, totalAmount - totalPaidAmount);
+
+    // 1. Populate metadata
+    document.getElementById("rOrderId").textContent = order.orderId;
+    document.getElementById("rDate").textContent = formatDate(order.orderDate || new Date().toISOString());
+    document.getElementById("rCustName").textContent = order.customerName;
+    document.getElementById("rPhone").textContent = order.phone || "-";
+
+    // 2. Populate items list table
+    const tbody = document.getElementById("rItemsBody");
+    tbody.innerHTML = "";
+
+    allOrderItems.forEach((item) => {
+      const tr = document.createElement("tr");
+      const qtyText = item.notes && item.notes.includes("Qty:") ? item.notes.replace("Qty:", "").trim() : "1";
+      tr.innerHTML = `
+        <td align="left" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${item.orderType}</td>
+        <td align="center" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${qtyText}</td>
+        <td align="right" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${formatCurrency(item.amount)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // 3. Populate totals
+    document.getElementById("rTotalAmount").textContent = formatCurrency(totalAmount);
+    document.getElementById("rPaidAmount").textContent = formatCurrency(totalPaidAmount);
+    document.getElementById("rBalanceDue").textContent = formatCurrency(totalRemaining);
+
+    // 4. QR Code & UPI ID
+    const upiId = CONFIRMED_UPI_ID;
+    document.getElementById("rUpiId").textContent = upiId;
+
+    const qrUrlString = qrUrl(upiId, totalRemaining, order.orderId, order.customerName);
+    const qrImg = document.getElementById("rQrImage");
+    qrImg.src = qrUrlString;
+
+    // Wait for the QR code image to fully load before capturing
+    await new Promise((resolve) => {
+      qrImg.onload = () => resolve();
+      qrImg.onerror = () => resolve();
+      setTimeout(resolve, 1500); // safety fallback
+    });
+
+    // 5. Render to Canvas using html2canvas
+    const template = document.getElementById("receiptCaptureTemplate");
+
+    // Call html2canvas
+    const canvas = await html2canvas(template, {
+      scale: 2, // high-res crisp canvas
+      backgroundColor: "#ffffff",
+      logging: false,
+      useCORS: true
+    });
+
+    // 6. Convert canvas to PNG blob
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Could not create receipt image.");
+
+    // 7. Trigger dynamic download to device
+    const downloadLink = document.createElement("a");
+    downloadLink.href = URL.createObjectURL(blob);
+    downloadLink.download = `receipt-${order.orderId}.png`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
   }
 
   function renderCustomerReceipt(order, relatedOrders = []) {
@@ -612,14 +860,17 @@
     byId("receiptCustomerName").textContent = order.customerName || "-";
     byId("receiptPhone").textContent = order.phone || "-";
     
+    const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+
     // Show all items for this order in a list
     const itemsList = byId("receiptItemsList");
     if (itemsList && allOrderItems.length > 0) {
       itemsList.innerHTML = allOrderItems.map((item, idx) => {
         const qty = item.notes && item.notes.includes("Qty:") ? item.notes : "Qty: 1";
+        const qtyText = currentLang === "en" ? qty : qty.replace("Qty:", "मात्रा:");
         return `<div style="padding: 6px 0; border-bottom: 1px solid #eee;">
           <strong>${item.orderType}</strong>
-          <span style="display: block; font-size: 0.85rem; color: #666;">${qty} · ${formatCurrency(item.amount)}</span>
+          <span style="display: block; font-size: 0.85rem; color: #666;">${qtyText} · ${formatCurrency(item.amount)}</span>
         </div>`;
       }).join("");
     } else {
@@ -630,19 +881,56 @@
       byId("receiptOrderType").textContent = itemsText || "-";
     }
     
+    // Status text in local language
+    const stepData = {
+      "Ordered": { icon: "📋", labelEn: "Ordered", labelHi: "नया ऑर्डर" },
+      "In Progress": { icon: "🧵", labelEn: "In Progress", labelHi: "सिलाई जारी" },
+      "Completed": { icon: "👗", labelEn: "Completed", labelHi: "तैयार है" },
+      "Delivered": { icon: "🎁", labelEn: "Delivered", labelHi: "दे दिया" }
+    };
+    const statusObj = stepData[normalizeStatusLabel(order.orderStatus)] || { icon: "📋", labelEn: "Ordered", labelHi: "नया ऑर्डर" };
+    const displayStatus = currentLang === "en" ? statusObj.labelEn : statusObj.labelHi;
+
     byId("receiptAmount").textContent = formatCurrency(totalAmount);
     byId("receiptPaidAmount").textContent = formatCurrency(totalPaidAmount);
     byId("receiptRemainingAmount").textContent = formatCurrency(totalRemaining);
-    byId("receiptOrderStatus").textContent = normalizeStatusLabel(order.orderStatus || "Order Placed");
-    byId("receiptPaymentStatus").textContent = paymentStatus;
+    byId("receiptOrderStatus").textContent = displayStatus;
+    
+    const pStatObj = paymentStatusLabel(paymentStatus, currentLang);
+    const receiptPaymentStatusEl = byId("receiptPaymentStatus");
+    if (receiptPaymentStatusEl) {
+      receiptPaymentStatusEl.className = `status-pill ${pStatObj.className}`;
+      receiptPaymentStatusEl.innerHTML = pStatObj.text;
+    }
+
     byId("receiptOrderDate").textContent = formatDate(order.orderDate);
     renderWorkflowProgress(order);
+
+    // Wire download button
+    const downloadReceiptBtn = byId("downloadReceiptBtn");
+    if (downloadReceiptBtn) {
+      downloadReceiptBtn.onclick = async () => {
+        try {
+          downloadReceiptBtn.disabled = true;
+          downloadReceiptBtn.style.opacity = "0.6";
+          
+          await generateCustomerReceiptImage(order, allOrderItems);
+        } catch (err) {
+          console.error("Receipt download failed:", err);
+          alert(currentLang === "en" ? "Could not download bill image." : "बिल इमेज डाउनलोड करने में असमर्थ।");
+        } finally {
+          downloadReceiptBtn.disabled = false;
+          downloadReceiptBtn.style.opacity = "1";
+        }
+      };
+    }
 
     const paymentCard = byId("paymentCard");
     const completeMsg = byId("completeMsg");
     const paymentHeading = byId("paymentHeading");
     const paymentText = byId("paymentText");
     const payBtn = byId("payBtn");
+    const confirmPaidBtn = byId("confirmPaidBtn");
     const waBtn = byId("waBtn");
     const qrImage = byId("qrImage");
     const paymentUpiId = byId("paymentUpiId");
@@ -657,24 +945,59 @@
     if (paymentStatus === "Paid") {
       toggleHidden(paymentCard, true);
       completeMsg.classList.remove("hidden");
-      completeMsg.innerHTML = `
+      completeMsg.innerHTML = currentLang === "en" ? `
         <strong>Payment Complete</strong>
         <p class="muted">This order has been fully paid. No further action is required.</p>
+      ` : `
+        <strong>पेमेंट पूरा हो गया है</strong>
+        <p class="muted">इस ऑर्डर का पूरा पेमेंट मिल चुका है। अब किसी अन्य भुगतान की आवश्यकता नहीं है।</p>
       `;
     } else {
       const due = paymentStatus === "Partially Paid" ? totalRemaining : totalAmount;
       qrAmount.textContent = formatCurrency(due);
-      paymentHeading.textContent = paymentStatus === "Partially Paid" ? "Pay Remaining" : "Pay Now";
-      paymentText.textContent = paymentStatus === "Partially Paid"
-        ? `₹${due} remains for this order. Tap the payment button or pay directly to the UPI ID below.`
-        : `Pay the full amount for this order using the UPI ID below.`;
+      
+      if (paymentStatus === "Partially Paid") {
+        paymentHeading.textContent = currentLang === "en" ? "Pay Remaining" : "बाकी पेमेंट करें";
+        paymentText.textContent = currentLang === "en"
+          ? `₹${due} remains for this order. Tap the payment button or pay directly to the UPI ID below.`
+          : `ऑर्डर का ₹${due} बाकी है। नीचे दिए बटन पर क्लिक करें या सीधे UPI आईडी पर पेमेंट करें।`;
+        payBtn.innerHTML = `Pay Remaining <span class="btn-hi">/ बाकी पेमेंट करें</span>`;
+      } else {
+        paymentHeading.textContent = currentLang === "en" ? "Pay Now" : "अभी पेमेंट करें";
+        paymentText.textContent = currentLang === "en"
+          ? `Pay the full amount for this order using the UPI ID below.`
+          : `इस ऑर्डर का पूरा पेमेंट करने के लिए नीचे दी गई UPI आईडी का इस्तेमाल करें।`;
+        payBtn.innerHTML = `Pay Now <span class="btn-hi">/ अभी पेमेंट करें</span>`;
+      }
+      
       if (paymentUpiId) paymentUpiId.textContent = upiId;
       if (qrImage) qrImage.src = qrUrl(upiId, due, order.orderId, order.customerName);
-      payBtn.textContent = paymentStatus === "Partially Paid" ? "Pay Remaining" : "Pay Now";
+      
       payBtn.onclick = () => {
         const intent = upiIntent(upiId, due, order.orderId, order.customerName);
         window.location.href = intent;
       };
+
+      // "I have paid" confirmation button click handler
+      if (confirmPaidBtn) {
+        confirmPaidBtn.onclick = () => {
+          const confirmText = `Hello Seema ji, I have completed the payment of ₹${due} for Order ${order.orderId}. Here is my payment receipt! / हेलो सीमा जी, मैंने ऑर्डर ${order.orderId} का ₹${due} पेमेंट कर दिया है। यह रही मेरी पेमेंट रसीद!`;
+          
+          navigator.clipboard.writeText(confirmText).then(() => {
+            const alertText = currentLang === "en"
+              ? "Payment confirmation copied to clipboard! Opening WhatsApp to send screenshot..."
+              : "पेमेंट कन्फर्मेशन क्लिपबोर्ड पर कॉपी हो गया है! स्क्रीनशॉट भेजने के लिए व्हाट्सएप खुल रहा है...";
+            alert(alertText);
+            
+            const waUrl = buildWhatsAppUrl(whatsapp, confirmText);
+            window.open(waUrl, "_blank", "noopener,noreferrer");
+          }).catch(() => {
+            const waUrl = buildWhatsAppUrl(whatsapp, confirmText);
+            window.open(waUrl, "_blank", "noopener,noreferrer");
+          });
+        };
+      }
+
       waBtn.href = buildWhatsAppUrl(whatsapp, `Hello Seema ji, I want an update for Order ${order.orderId}.`);
       toggleHidden(paymentCard, false);
     }
@@ -700,15 +1023,21 @@
       groupedOrders.forEach((item) => {
         const entry = document.createElement("article");
         entry.className = "mini-item";
+        
+        const remainingLabel = currentLang === "en" ? "remaining" : "बाकी";
+        const totalLabel = currentLang === "en" ? "total" : "कुल";
+
         entry.innerHTML = `
           <strong>${item.orderId} · ${item.orderType}</strong>
-          <p>${formatCurrency(item.amount)} total · ${formatCurrency(item.remaining)} remaining</p>
+          <p>${formatCurrency(item.amount)} ${totalLabel} · ${formatCurrency(item.remaining)} ${remainingLabel}</p>
         `;
         entry.addEventListener("click", () => renderCustomerReceipt(item, relatedOrders));
         quickList.append(entry);
       });
       if (!otherOrders.length) {
-        quickList.innerHTML = '<p class="muted">No other orders on this phone number.</p>';
+        quickList.innerHTML = currentLang === "en" 
+          ? '<p class="muted">No other orders on this phone number.</p>'
+          : '<p class="muted">इस फोन नंबर पर कोई अन्य ऑर्डर नहीं मिला।</p>';
       }
       moreOrdersCard.classList.toggle("hidden", !otherOrders.length);
     }
@@ -717,12 +1046,16 @@
   async function handleCustomerSearch() {
     const query = String(byId("customerQuery").value || "").trim();
     const status = byId("customerStatus");
+    const currentLang = localStorage.getItem("seemaCustLang") || "hi";
+
     if (!query) {
-      setMessage(status, "Enter an Order ID or phone number.", "error");
+      const errorMsg = currentLang === "en" ? "Enter an Order ID or phone number." : "ऑर्डर ID या फोन नंबर डालें।";
+      setMessage(status, errorMsg, "error");
       return;
     }
 
-    setMessage(status, "Searching orders...", "muted");
+    const searchMsg = currentLang === "en" ? "Searching orders..." : "ऑर्डर खोज रहे हैं...";
+    setMessage(status, searchMsg, "muted");
     try {
       await fetchSettings();
       const orders = await fetchOrders(true);
@@ -738,7 +1071,8 @@
       const matches = exactOrders.length > 0 ? exactOrders : byPhone;
 
       if (!matches.length) {
-        setMessage(status, "No matching order found.", "error");
+        const notFoundMsg = currentLang === "en" ? "No matching order found." : "कोई मैचिंग ऑर्डर नहीं मिला।";
+        setMessage(status, notFoundMsg, "error");
         toggleHidden(byId("customerResultsCard"), true);
         toggleHidden(byId("receiptCard"), true);
         toggleHidden(byId("receiptProgress"), true);
@@ -751,9 +1085,14 @@
       const primary = matches[0];
       const related = exactOrders.length > 0 ? exactOrders : (primary.phone ? orders.filter((order) => normalizePhone(order.phone) === normalizePhone(primary.phone)) : matches);
       renderCustomerReceipt(primary, related);
-      setMessage(status, `Found ${matches.length} matching order${matches.length === 1 ? "" : "s"}.`, "success");
+      
+      const foundMsg = currentLang === "en"
+        ? `Found ${matches.length} matching order${matches.length === 1 ? "" : "s"}.`
+        : `${matches.length} मैचिंग ऑर्डर मिले।`;
+      setMessage(status, foundMsg, "success");
     } catch (error) {
-      setMessage(status, error.message || "Unable to fetch order data.", "error");
+      const failMsg = currentLang === "en" ? "Unable to fetch order data." : "डेटा लोड करने में असमर्थ।";
+      setMessage(status, error.message || failMsg, "error");
     }
   }
 
@@ -1710,12 +2049,23 @@
 
     if (page === "customer") {
       bindCustomerPage();
+      setupCustomerSpeechInput();
       patchCustomerReceiptState();
+      
+      // Set default language on page load
+      const defaultLang = localStorage.getItem("seemaCustLang") || "hi";
+      window.setLang(defaultLang);
+
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
       const phone = params.get("phone");
-      if (id && byId("customerQuery")) byId("customerQuery").value = id;
-      if (phone && byId("customerQuery")) byId("customerQuery").value = phone;
+      if (id && byId("customerQuery")) {
+        byId("customerQuery").value = id;
+        handleCustomerSearch();
+      } else if (phone && byId("customerQuery")) {
+        byId("customerQuery").value = phone;
+        handleCustomerSearch();
+      }
     }
 
     if (page === "admin") {

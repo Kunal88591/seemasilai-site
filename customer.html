@@ -8,19 +8,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IM+Fell+English:ital@0;1&family=Noto+Serif+Devanagari:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 </head>
 <body data-page="customer">
+  <!-- LANG BAR -->
+  <div class="lang-bar">
+    <span class="lang-bar-note" id="lbn" data-en="Customer portal" data-hi="ग्राहक ट्रैकिंग पोर्टल">ग्राहक ट्रैकिंग पोर्टल</span>
+    <div class="lang-seg">
+      <button id="bEn" onclick="setLang('en')">English</button>
+      <button class="on" id="bHi" onclick="setLang('hi')">हिन्दी</button>
+    </div>
+  </div>
+
   <nav id="nav">
     <a href="index.html" class="logo">
       <span class="logo-en">Seema Silai Centre</span>
       <span class="logo-hi">Indore, Madhya Pradesh</span>
     </a>
     <ul class="nav-mid">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="customer.html" class="active">Track</a></li>
-      <li><a href="admin.html">Admin</a></li>
+      <li><a href="index.html" data-en="Home" data-hi="होम">Home</a></li>
+      <li><a href="customer.html" class="active" data-en="Track" data-hi="ट्रैक करें">Track</a></li>
+      <li><a href="admin.html" data-en="Admin" data-hi="एडमिन">Admin</a></li>
     </ul>
-    <a href="#" class="nav-book">Track Order</a>
+    <a href="#" class="nav-book" data-en="Track Order" data-hi="ऑर्डर ट्रैक करें">Track Order</a>
     <div class="hbg" id="hbg" onclick="toggleMob()">
       <span></span><span></span><span></span>
     </div>
@@ -28,28 +38,31 @@
 
   <main class="page">
     <section class="hero">
-      <p class="eyebrow">Customer portal</p>
-      <h1>Track your order</h1>
-      <p>Search by order ID or phone number to review the latest status, bill details, and payment options.</p>
+      <p class="eyebrow" data-en="Customer portal" data-hi="ग्राहक ट्रैकिंग पोर्टल">Customer portal</p>
+      <h1 data-en="Track your order" data-hi="अपना ऑर्डर ट्रैक करें">Track your order</h1>
+      <p data-en="Search by order ID or phone number to review the latest status, bill details, and payment options." data-hi="ऑर्डर की स्थिति, बिल डिटेल्स और पेमेंट ऑप्शंस देखने के लिए ऑर्डर ID या फोन नंबर डालकर खोजें।">Search by order ID or phone number to review the latest status, bill details, and payment options.</p>
     </section>
 
     <section class="card" style="max-width: 600px; margin: 24px auto;">
-      <h3>Search Order</h3>
+      <h3 data-en="Search Order" data-hi="ऑर्डर खोजें">Search Order</h3>
       <div class="input-grid two">
         <div>
-          <label for="customerQuery">Order ID or Phone Number</label>
-          <input id="customerQuery" type="text" placeholder="ORD001 or 10-digit phone" autocomplete="off" />
+          <label for="customerQuery" data-en="Order ID or Phone Number" data-hi="ऑर्डर ID या फोन नंबर">Order ID or Phone Number</label>
+          <div class="input-with-mic">
+            <input id="customerQuery" type="text" data-en="ORD001 or 10-digit phone" data-hi="नंबर या ऑर्डर ID डालें" placeholder="नंबर या ऑर्डर ID डालें" autocomplete="off" />
+            <button type="button" class="btn-mic" id="customerMicBtn" title="Speak to Search / बोलकर खोजें">🎤</button>
+          </div>
         </div>
         <div class="hero-actions" style="align-self:end;">
-          <button id="customerSearchBtn" class="btn btn-primary touch" type="button">Search</button>
-          <button id="customerResetBtn" class="btn btn-secondary touch" type="button">Reset</button>
+          <button id="customerSearchBtn" class="btn btn-primary touch" type="button">Search <span class="btn-hi">/ खोजें</span></button>
+          <button id="customerResetBtn" class="btn btn-secondary touch" type="button">Reset <span class="btn-hi">/ साफ करें</span></button>
         </div>
       </div>
       <p id="customerStatus" class="msg"></p>
     </section>
 
     <section id="customerResultsCard" class="card hidden" style="margin-top:16px;">
-      <h3>Search Results</h3>
+      <h3 data-en="Search Results" data-hi="खोजे गए ऑर्डर्स">Search Results</h3>
       <p id="customerResultCount" class="muted"></p>
       <div id="customerResults" class="search-results"></div>
     </section>
@@ -58,23 +71,40 @@
       <!-- Order Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div>
-          <h3 id="receiptTitle" style="margin: 0; margin-bottom: 4px;">Order <strong id="receiptOrderId">-</strong></h3>
-          <p id="receiptSubtitle" class="muted" style="margin: 0; font-size: 0.85rem;">Placed on <span id="receiptOrderDate">-</span></p>
+          <h3 id="receiptTitle" style="margin: 0; margin-bottom: 4px;" data-en="Order " data-hi="ऑर्डर ">Order <strong id="receiptOrderId">-</strong></h3>
+          <p id="receiptSubtitle" class="muted" style="margin: 0; font-size: 0.85rem;"><span data-en="Placed on " data-hi="ऑर्डर की तारीख: ">Placed on </span><span id="receiptOrderDate">-</span></p>
         </div>
-        <div style="text-align: right;">
+        <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
           <span id="receiptPaymentStatus" style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; background: #f0f0f0; color: #333;">-</span>
+          <button id="downloadReceiptBtn" class="btn btn-secondary touch" style="min-height: 32px; height: 32px; padding: 0 10px; font-size: 0.8rem; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" type="button">
+            📥 <span data-en="Download Bill" data-hi="बिल डाउनलोड">Download Bill</span>
+          </button>
         </div>
       </div>
 
       <!-- Quick Info Grid -->
       <div class="receipt" style="margin-bottom: 16px;">
-        <div class="receipt-row"><div><strong>Customer</strong><span id="receiptCustomerName">-</span></div><div><strong>Phone</strong><span id="receiptPhone">-</span></div></div>
-        <div class="receipt-row"><div><strong>Status</strong><span id="receiptOrderStatus">-</span></div></div>
+        <div class="receipt-row">
+          <div>
+            <strong data-en="Customer" data-hi="ग्राहक">Customer</strong>
+            <span id="receiptCustomerName">-</span>
+          </div>
+          <div>
+            <strong data-en="Phone" data-hi="फोन">Phone</strong>
+            <span id="receiptPhone">-</span>
+          </div>
+        </div>
+        <div class="receipt-row">
+          <div>
+            <strong data-en="Status" data-hi="ऑर्डर की स्थिति">Status</strong>
+            <span id="receiptOrderStatus">-</span>
+          </div>
+        </div>
       </div>
 
       <!-- Items List -->
       <div style="margin-bottom: 16px;">
-        <strong style="display: block; margin-bottom: 8px;">Items Ordered</strong>
+        <strong style="display: block; margin-bottom: 8px;" data-en="Items Ordered" data-hi="सिले जाने वाले कपड़े">Items Ordered</strong>
         <div id="receiptItemsList" style="background: #f9f9f9; padding: 12px; border-radius: 6px; border-left: 3px solid #8b2b1a;">
           <span id="receiptOrderType">-</span>
         </div>
@@ -82,13 +112,28 @@
 
       <!-- Amount Summary (More Prominent) -->
       <div style="background: rgba(139, 43, 26, 0.08); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <div class="receipt-row"><div><strong>Total Amount</strong><span id="receiptAmount" style="font-size: 1.1rem; font-weight: 700; color: #333;">₹0</span></div><div><strong>Paid</strong><span id="receiptPaidAmount" style="color: #1f7a4a; font-weight: 600;">₹0</span></div></div>
-        <div class="receipt-row"><div><strong>Due Amount</strong><span id="receiptRemainingAmount" style="font-size: 1.1rem; font-weight: 700; color: #b4232c;">₹0</span></div><div>&nbsp;</div></div>
+        <div class="receipt-row">
+          <div>
+            <strong data-en="Total Amount" data-hi="कुल पैसे">Total Amount</strong>
+            <span id="receiptAmount" style="font-size: 1.1rem; font-weight: 700; color: #333;">₹0</span>
+          </div>
+          <div>
+            <strong data-en="Paid" data-hi="एडवांस पेमेंट (Paid)">Paid</strong>
+            <span id="receiptPaidAmount" style="color: #1f7a4a; font-weight: 600;">₹0</span>
+          </div>
+        </div>
+        <div class="receipt-row">
+          <div>
+            <strong data-en="Due Amount" data-hi="बाकी पेमेंट (Due)">Due Amount</strong>
+            <span id="receiptRemainingAmount" style="font-size: 1.1rem; font-weight: 700; color: #b4232c;">₹0</span>
+          </div>
+          <div>&nbsp;</div>
+        </div>
       </div>
 
       <!-- Progress Bar -->
       <div id="receiptProgress" class="status-progress hidden" style="margin-bottom: 16px;">
-        <div style="margin-bottom: 8px;"><strong>Order Progress</strong></div>
+        <div style="margin-bottom: 8px;"><strong data-en="Order Progress" data-hi="ऑर्डर की स्थिति">Order Progress</strong></div>
         <div class="progress-bar">
           <div class="progress-step" data-status="Ordered">
             <div class="progress-dot"></div>
@@ -111,17 +156,18 @@
 
       <!-- Payment Section -->
       <div id="paymentCard" class="qr-box hidden" style="margin-bottom: 16px; text-align: center;">
-        <strong id="paymentHeading">Payment Required</strong>
+        <strong id="paymentHeading" data-en="Payment Required" data-hi="पेमेंट की जरूरत">Payment Required</strong>
         <p id="paymentText" class="muted"></p>
         <div style="margin: 12px 0; display: flex; flex-direction: column; align-items: center;">
           <img id="qrImage" alt="UPI QR code" style="max-width: 260px; height: auto; margin-bottom: 10px; border-radius: 8px;" />
-          <p class="muted" style="margin: 0;">Pay directly to UPI ID:</p>
+          <p class="muted" style="margin: 0;" data-en="Pay directly to UPI ID:" data-hi="इस UPI आईडी पर डायरेक्ट पेमेंट करें:">Pay directly to UPI ID:</p>
           <p style="margin: 6px 0 0 0; font-weight: 700; color: #8b2b1a; font-size: 1.1rem;" id="paymentUpiId">Q183526070@ybl</p>
-          <p class="muted" style="margin: 12px 0 0 0;">Amount to pay: <strong id="qrAmount" style="color: #b4232c; font-size: 1.15rem;">₹0</strong></p>
+          <p class="muted" style="margin: 12px 0 0 0;"><span data-en="Amount to pay:" data-hi="पेमेंट करने की राशि:">Amount to pay:</span> <strong id="qrAmount" style="color: #b4232c; font-size: 1.15rem;">₹0</strong></p>
         </div>
         <div class="actions" style="margin-top:12px; justify-content:center; gap: 8px;">
-          <button id="payBtn" class="btn btn-primary touch" type="button">Open UPI App</button>
-          <a id="waBtn" class="btn btn-secondary touch" href="#" target="_blank" rel="noopener">Message on WhatsApp</a>
+          <button id="payBtn" class="btn btn-primary touch" type="button">Open UPI App <span class="btn-hi">/ यूपीआई ऐप खोलें</span></button>
+          <button id="confirmPaidBtn" class="btn btn-ghost touch" type="button">I have paid <span class="btn-hi">/ मैंने पेमेंट कर दिया</span></button>
+          <a id="waBtn" class="btn btn-secondary touch" href="#" target="_blank" rel="noopener">WhatsApp Support <span class="btn-hi">/ सहायता</span></a>
         </div>
       </div>
 
@@ -130,14 +176,73 @@
     </section>
 
     <section id="moreOrdersCard" class="card hidden" style="margin-top:16px; max-width: 600px; margin-left: auto; margin-right: auto;">
-      <h3>Other Orders on This Phone</h3>
+      <h3 data-en="Other Orders on This Phone" data-hi="इस फोन नंबर पर अन्य ऑर्डर्स">Other Orders on This Phone</h3>
       <div id="quickList" class="mini-list"></div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>© 2026 Seema Silai Centre. All rights reserved.</p>
+    <p data-en="© 2026 Seema Silai Centre. All rights reserved." data-hi="© 2026 सीमा सिलाई सेंटर। सर्वाधिकार सुरक्षित।">© 2026 Seema Silai Centre. All rights reserved.</p>
   </footer>
+
+  <!-- OFF-SCREEN RECEIPT CAPTURE TEMPLATE FOR HTML2CANVAS -->
+  <div id="receiptCaptureTemplate" class="receipt-bill-container" style="position: absolute; left: -9999px; top: -9999px; width: 420px; z-index: -9999;">
+    <div class="receipt-bill">
+      <div class="receipt-header">
+        <span class="receipt-logo">🧵</span>
+        <h2>Seema Silai Centre</h2>
+        <p class="receipt-sub">Veena Nagar, Indore (M.P.)</p>
+        <p class="receipt-title">DIGITAL RECEIPT / बिल रसीद</p>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-meta">
+        <p><strong>Order ID / ऑर्डर ID:</strong> <span id="rOrderId">-</span></p>
+        <p><strong>Date / तारीख:</strong> <span id="rDate">-</span></p>
+        <p><strong>Customer / कस्टमर:</strong> <span id="rCustName">-</span></p>
+        <p><strong>Phone / फ़ोन:</strong> <span id="rPhone">-</span></p>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-items-section">
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th align="left">Item / आइटम</th>
+              <th align="center">Qty / मात्रा</th>
+              <th align="right">Amount / रेट</th>
+            </tr>
+          </thead>
+          <tbody id="rItemsBody">
+            <!-- Dynamic rows populated via JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-summary">
+        <div class="receipt-row">
+          <span>Total / कुल राशि:</span>
+          <span id="rTotalAmount">₹0</span>
+        </div>
+        <div class="receipt-row">
+          <span>Paid / जमा पेमेंट:</span>
+          <span id="rPaidAmount">₹0</span>
+        </div>
+        <div class="receipt-row highlight">
+          <span>Balance Due / बाकी पेमेंट:</span>
+          <span id="rBalanceDue">₹0</span>
+        </div>
+      </div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-qr-section">
+        <p class="qr-text">Scan QR to Pay / भुगतान के लिए स्कैन करें</p>
+        <img id="rQrImage" src="" alt="Payment QR" style="width: 150px; height: 150px; display: block; margin: 10px auto;" />
+        <p class="upi-id-text">UPI ID: <span id="rUpiId">-</span></p>
+      </div>
+      <div class="receipt-footer">
+        <p>Thank you for your visit! / सेवा का अवसर देने के लिए धन्यवाद।</p>
+        <p class="stitch-foot">Stitched with love / प्यार से सिला हुआ ❤️</p>
+      </div>
+    </div>
+  </div>
 
   <script src="config.js"></script>
   <script src="script.js"></script>

@@ -1,6 +1,52 @@
-# Seema Silai Centre
+# Seema Silai Centre (v2.0 - Premium Release)
 
 Mobile-first product for a home tailor in Indore.
+
+## 🚀 Version 2.0: Major Upgrade & New Capabilities
+
+Seema Silai Centre has undergone a massive upgrade from **v1.0 (Basic Order Tracker & Texter)** to **v2.0 (Premium Automated Billing & Interactive Customer Portal)**. This release addresses key psychological friction points in payment collections, brings high-accuracy bilingual voice search, introduces automated receipt image exports, and transforms the customer tracking experience.
+
+### 📊 Version Comparison: v1.0 vs v2.0
+
+| Feature Area | Version 1.0 (Basic) | Version 2.0 (Premium Upgrade) |
+|:---|:---|:---|
+| **Language System** | English-only interface; formal Sanskritized terms. | **Bilingual Toggle Bar (English & Spoken Hinglish)**. Defaults to Hindi. Natural everyday terms (*पैसे मिल गए*, *बाकी पेमेंट*, *सिलाई जारी*). |
+| **Billing System** | Direct text-based WhatsApp reminders (requires manual copying/typing). | **Automated Receipt Image System**. Auto-renders off-screen DOM, outputs dotted-stitch invoices with Scan-to-Pay QR, saves PNG, copies to clipboard. |
+| **Voice Command** | No speech capabilities; manual typing of names and phone numbers. | **🎤 Voice Search & Smart Mic Input**. High-accuracy bilingual digit speech parser (Hindi/English numerals) with auto-searching. |
+| **Customer Tracking** | Simple table view; static text progress bars. | **Tailoring-Themed Emoji Steppers (📋 🧵 👗 🎁)** with glowing pulsing active states (`pulse-active-step`). |
+| **Screenshot Sharing** | Customer pays but has no direct way to send proof easily. | **"I have paid / मैंने पेमेंट कर दिया" Whatsapp Flow**. Generates pre-filled text, copies it, and opens chat for instant screenshot paste. |
+| **Client Invoice Access** | Customer can only view payment details on a webpage. | **📥 Local Invoice Downloads**. Customer can download their high-res receipt image (`receipt-ORDxxx.png`) directly from the portal! |
+
+---
+
+## 🌟 What's New in Version 2.0
+
+### 1. 🎨 Fully Bilingual Interface (Gold/Indigo Accent)
+* **Merchant & Customer Parity**: Placed a premium, sticky English/Hindi toggle bar at the top of both `admin.html` and `customer.html`.
+* **Everyday Spoken Hinglish**: Avoids rigid literary Hindi in favor of natural conversational phrases that help Seema manage orders and clients easily.
+* **Persistent Preferences**: Local storage (`seemaAdminLang` / `seemaCustLang`) remembers the selected language, defaulting to Hindi on first load.
+
+### 2. 📸 Automated Dotted-Stitch digital invoice system
+* **Authoritative Billing**: Solves the neighbor-awkwardness problem by replacing text reminders with a professional, automated digital receipt image, triggering the customer's *Authority Bias* to pay.
+* **Scan-to-Pay QR**: Injects a high-res UPI QR code pre-loaded with the exact unpaid balance.
+* **Clipboard Automation**: The admin app uses `html2canvas` to render off-screen invoices, download a backup PNG, copy the PNG directly to the system clipboard, and open WhatsApp in a single click—allowing Seema to simply press `Ctrl+V` to send!
+
+### 3. 🎤 Bilingual Voice Search & Input
+* **Single-Mic Intelligent Voice Assistant**: Inside `admin.html`, Seema can speak entire orders in a single breath (e.g. *"Pooja ko suit do din mein paanch sau rupaye mein do"*), and the system automatically parses and populates name, item, price, and due date.
+* **Speech-to-Text search**: In `customer.html`, clients can tap the mic, speak their order ID or phone number (e.g., *"एक शून्य दो"* or *"ORD zero zero two"*), and the portal auto-parses and executes search.
+
+### 4. 👗 Tailoring-Themed Workflow Stepper
+* **Sewing Milestones**: Static bars are replaced with tailored stages:
+  * `📋 Ordered / नया ऑर्डर`
+  - `🧵 In Progress / सिलाई जारी`
+  - `👗 Completed / तैयार है`
+  - `🎁 Delivered / दे दिया`
+* **Micro-Animations**: The active step glows and pulses smoothly using elegant CSS animations to highlight the exact status of the dress.
+
+### 5. 📥 Client-Side Bill Downloads
+* Allows customers to save their digital bill directly from the tracking portal by clicking `📥 Download Bill / बिल डाउनलोड`. It runs client-side `html2canvas` rendering dynamically, generating the exact same high-res invoice and saving it locally.
+
+---
 
 ### Problem Statement
 
