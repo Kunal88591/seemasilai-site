@@ -335,7 +335,8 @@
       saree: "Saree", "साड़ी": "Saree", "साड़ी": "Saree",
       lehenga: "Lehenga", "लहंगा": "Lehenga",
       kurti: "Kurti", "कुर्ती": "Kurti",
-      salwar: "Salwar", "सलवार": "Salwar"
+      salwar: "Salwar", "सलवार": "Salwar",
+      "piko fall": "Piko Fall", "pico fall": "Piko Fall", "piko": "Piko Fall", "pico": "Piko Fall", "fall": "Piko Fall", "पिको फॉल": "Piko Fall", "पिको": "Piko Fall", "फॉल": "Piko Fall"
     };
 
     // Find all keyword occurrences in the text
@@ -1572,6 +1573,7 @@ This is an automated reminder. Thank you!`;
         <option value="Lehenga">Lehenga / लहंगा</option>
         <option value="Kurti">Kurti / कुर्ती</option>
         <option value="Salwar">Salwar / सलवार</option>
+        <option value="Piko Fall">Piko Fall / पिको फॉल</option>
       </select>
       <div class="input-with-mic">
         <input type="text" class="customItem" placeholder="Or type custom item / या दूसरा सामान लिखें">

@@ -1295,6 +1295,7 @@
                   <option>Suit</option>
                   <option>Saree</option>
                   <option>Lehenga</option>
+                  <option>Piko Fall</option>
                 </select>
               </div>
               <div>
@@ -1775,6 +1776,7 @@
             <option>Suit</option>
             <option>Saree</option>
             <option>Lehenga</option>
+            <option>Piko Fall</option>
           </select>
         </div>
         <div>
