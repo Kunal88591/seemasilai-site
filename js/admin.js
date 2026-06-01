@@ -1037,34 +1037,60 @@ This is an automated reminder. Thank you!`;
     console.log("📸 Generating receipt image for:", orderGroup.orderId);
 
     // 1. Populate metadata
-    document.getElementById("rOrderId").textContent = orderGroup.orderId;
-    document.getElementById("rDate").textContent = window.SeemaSheets.formatDate(orderGroup.orderDate || new Date().toISOString());
-    document.getElementById("rCustName").textContent = orderGroup.customerName;
-    document.getElementById("rPhone").textContent = orderGroup.customerPhone || "-";
+    const rOrderIdEl = document.getElementById("rOrderId");
+    if (rOrderIdEl) rOrderIdEl.textContent = orderGroup.orderId;
+    const rDateEl = document.getElementById("rDate");
+    if (rDateEl) rDateEl.textContent = window.SeemaSheets.formatDate(orderGroup.orderDate || new Date().toISOString());
+    const rCustNameEl = document.getElementById("rCustName");
+    if (rCustNameEl) rCustNameEl.textContent = orderGroup.customerName;
+    const rPhoneEl = document.getElementById("rPhone");
+    if (rPhoneEl) rPhoneEl.textContent = orderGroup.customerPhone || "-";
+    
+    // Populate Order Status dynamically
+    const statusMap = {
+      "Ordered": "Order Placed / नया ऑर्डर",
+      "Order Placed": "Order Placed / नया ऑर्डर",
+      "Cutting": "Cutting / कपड़े कटिंग जारी",
+      "In Progress": "In Progress / सिलाई जारी है",
+      "Completed": "Completed / तैयार है",
+      "Ready": "Ready / तैयार है",
+      "Delivered": "Delivered / दे दिया"
+    };
+    const rStatusEl = document.getElementById("rStatus");
+    if (rStatusEl) {
+      const statusValue = orderGroup.orderStatus || "Ordered";
+      rStatusEl.textContent = statusMap[statusValue] || statusValue;
+    }
 
     // 2. Populate items list table
     const tbody = document.getElementById("rItemsBody");
-    tbody.innerHTML = "";
+    if (tbody) {
+      tbody.innerHTML = "";
 
-    orderGroup.items.forEach((item) => {
-      const tr = document.createElement("tr");
-      const qtyText = item.notes && item.notes.includes("Qty:") ? item.notes.replace("Qty:", "").trim() : "1";
-      tr.innerHTML = `
-        <td align="left" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${item.orderType}</td>
-        <td align="center" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${qtyText}</td>
-        <td align="right" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${window.SeemaSheets.formatAmount(item.amount)}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+      orderGroup.items.forEach((item) => {
+        const tr = document.createElement("tr");
+        const qtyText = item.notes && item.notes.includes("Qty:") ? item.notes.replace("Qty:", "").trim() : "1";
+        tr.innerHTML = `
+          <td align="left" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${item.orderType}</td>
+          <td align="center" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${qtyText}</td>
+          <td align="right" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${window.SeemaSheets.formatAmount(item.amount)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
     // 3. Populate totals
-    document.getElementById("rTotalAmount").textContent = window.SeemaSheets.formatAmount(orderGroup.totalAmount);
-    document.getElementById("rPaidAmount").textContent = window.SeemaSheets.formatAmount(orderGroup.totalAmountPaid);
-    document.getElementById("rBalanceDue").textContent = window.SeemaSheets.formatAmount(orderGroup.totalBalanceDue);
+    const rTotalAmountEl = document.getElementById("rTotalAmount");
+    if (rTotalAmountEl) rTotalAmountEl.textContent = window.SeemaSheets.formatAmount(orderGroup.totalAmount);
+    const rPaidAmountEl = document.getElementById("rPaidAmount");
+    if (rPaidAmountEl) rPaidAmountEl.textContent = window.SeemaSheets.formatAmount(orderGroup.totalAmountPaid);
+    const rBalanceDueEl = document.getElementById("rBalanceDue");
+    if (rBalanceDueEl) rBalanceDueEl.textContent = window.SeemaSheets.formatAmount(orderGroup.totalBalanceDue);
 
     // 4. QR Code & UPI ID
     const upiId = getCurrentUpi();
-    document.getElementById("rUpiId").textContent = upiId;
+    const rUpiIdEl = document.getElementById("rUpiId");
+    if (rUpiIdEl) rUpiIdEl.textContent = upiId;
 
     // Dynamic QR URL using QRServer API
     const qrParams = new URLSearchParams({
@@ -1238,9 +1264,9 @@ This is an automated reminder. Thank you!`;
 
     const whatsappBtn = document.createElement("button");
     whatsappBtn.type = "button";
-    whatsappBtn.className = "btn-whatsapp";
-    whatsappBtn.title = "Send on WhatsApp / व्हाट्सएप पर भेजें";
-    whatsappBtn.innerHTML = "📱";
+    whatsappBtn.className = "btn btn-whatsapp btn-compact";
+    whatsappBtn.title = "Send Receipt via WhatsApp / व्हाट्सएप पर रसीद भेजें";
+    whatsappBtn.innerHTML = "📱 Send Receipt <span class=\"btn-hi\">/ रसीद भेजें</span>";
     whatsappBtn.addEventListener("click", async () => {
       try {
         setMessage(pendingMsg, "🔄 Generating receipt image... / रसीद तैयार हो रही है...");

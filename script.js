@@ -277,14 +277,14 @@
     const amount = Number(row[4] || 0);
     const paidAmount = Number(row[5] || 0);
     const remaining = Number(row[6] || Math.max(0, amount - paidAmount));
-    const paymentMethod = (row[7] || "").trim();
+    const paymentMethod = String(row[7] || "").trim();
     const orderStatus = normalizeStatusLabel(row[8] || "Order Placed");
-    const paymentStatus = (row[9] || "").trim() || (remaining <= 0 ? "Paid" : paidAmount > 0 ? "Partially Paid" : "Unpaid");
+    const paymentStatus = String(row[9] || "").trim() || (remaining <= 0 ? "Paid" : paidAmount > 0 ? "Partially Paid" : "Unpaid");
     return {
-      orderId: (row[0] || "").trim(),
-      customerName: (row[1] || "").trim(),
-      phone: (row[2] || "").trim(),
-      orderType: (row[3] || "").trim(),
+      orderId: String(row[0] || "").trim(),
+      customerName: String(row[1] || "").trim(),
+      phone: String(row[2] || "").trim(),
+      orderType: String(row[3] || "").trim(),
       amount,
       paidAmount,
       remaining,
@@ -293,7 +293,7 @@
       paymentStatus,
       orderDate: normalizeDateValue(row[10]),
       dueDate: normalizeDateValue(row[11]),
-      notes: (row[12] || "").trim()
+      notes: String(row[12] || "").trim()
     };
   }
 
@@ -308,6 +308,19 @@
   }
 
   async function readRange(range) {
+    // Try to read through the Google Apps Script Web App first (no API key/CORS limits, formats dates correctly)
+    try {
+      if (cfg.APPS_SCRIPT_URL && !cfg.APPS_SCRIPT_URL.includes("YOUR_")) {
+        const data = await postAction("read", { range });
+        if (data && data.ok) {
+          return data.values || [];
+        }
+      }
+    } catch (e) {
+      console.warn("Apps Script read failed, falling back to Sheets API v4:", e);
+    }
+
+    // Fallback to Google Sheets API v4 if Apps Script read fails
     const response = await fetch(buildReadUrl(range), { cache: "no-store" });
     if (!response.ok) throw new Error("Could not read Google Sheets data.");
     const data = await response.json();
@@ -777,34 +790,60 @@
     const totalRemaining = Math.max(0, totalAmount - totalPaidAmount);
 
     // 1. Populate metadata
-    document.getElementById("rOrderId").textContent = order.orderId;
-    document.getElementById("rDate").textContent = formatDate(order.orderDate || new Date().toISOString());
-    document.getElementById("rCustName").textContent = order.customerName;
-    document.getElementById("rPhone").textContent = order.phone || "-";
+    const rOrderIdEl = document.getElementById("rOrderId");
+    if (rOrderIdEl) rOrderIdEl.textContent = order.orderId;
+    const rDateEl = document.getElementById("rDate");
+    if (rDateEl) rDateEl.textContent = formatDate(order.orderDate || new Date().toISOString());
+    const rCustNameEl = document.getElementById("rCustName");
+    if (rCustNameEl) rCustNameEl.textContent = order.customerName;
+    const rPhoneEl = document.getElementById("rPhone");
+    if (rPhoneEl) rPhoneEl.textContent = order.phone || "-";
+
+    // Populate Order Status dynamically
+    const statusMap = {
+      "Ordered": "Order Placed / नया ऑर्डर",
+      "Order Placed": "Order Placed / नया ऑर्डर",
+      "Cutting": "Cutting / कपड़े कटिंग जारी",
+      "In Progress": "In Progress / सिलाई जारी है",
+      "Completed": "Completed / तैयार है",
+      "Ready": "Ready / तैयार है",
+      "Delivered": "Delivered / दे दिया"
+    };
+    const rStatusEl = document.getElementById("rStatus");
+    if (rStatusEl) {
+      const statusValue = order.orderStatus || "Ordered";
+      rStatusEl.textContent = statusMap[statusValue] || statusValue;
+    }
 
     // 2. Populate items list table
     const tbody = document.getElementById("rItemsBody");
-    tbody.innerHTML = "";
+    if (tbody) {
+      tbody.innerHTML = "";
 
-    allOrderItems.forEach((item) => {
-      const tr = document.createElement("tr");
-      const qtyText = item.notes && item.notes.includes("Qty:") ? item.notes.replace("Qty:", "").trim() : "1";
-      tr.innerHTML = `
-        <td align="left" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${item.orderType}</td>
-        <td align="center" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${qtyText}</td>
-        <td align="right" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${formatCurrency(item.amount)}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+      allOrderItems.forEach((item) => {
+        const tr = document.createElement("tr");
+        const qtyText = item.notes && item.notes.includes("Qty:") ? item.notes.replace("Qty:", "").trim() : "1";
+        tr.innerHTML = `
+          <td align="left" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${item.orderType}</td>
+          <td align="center" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${qtyText}</td>
+          <td align="right" style="padding: 8px 0; border-bottom: 1px dashed rgba(123, 77, 43, 0.1);">${formatCurrency(item.amount)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
     // 3. Populate totals
-    document.getElementById("rTotalAmount").textContent = formatCurrency(totalAmount);
-    document.getElementById("rPaidAmount").textContent = formatCurrency(totalPaidAmount);
-    document.getElementById("rBalanceDue").textContent = formatCurrency(totalRemaining);
+    const rTotalAmountEl = document.getElementById("rTotalAmount");
+    if (rTotalAmountEl) rTotalAmountEl.textContent = formatCurrency(totalAmount);
+    const rPaidAmountEl = document.getElementById("rPaidAmount");
+    if (rPaidAmountEl) rPaidAmountEl.textContent = formatCurrency(totalPaidAmount);
+    const rBalanceDueEl = document.getElementById("rBalanceDue");
+    if (rBalanceDueEl) rBalanceDueEl.textContent = formatCurrency(totalRemaining);
 
     // 4. QR Code & UPI ID
     const upiId = CONFIRMED_UPI_ID;
-    document.getElementById("rUpiId").textContent = upiId;
+    const rUpiIdEl = document.getElementById("rUpiId");
+    if (rUpiIdEl) rUpiIdEl.textContent = upiId;
 
     const qrUrlString = qrUrl(upiId, totalRemaining, order.orderId, order.customerName);
     const qrImg = document.getElementById("rQrImage");
@@ -856,9 +895,12 @@
     
     renderCustomerSummary({ ...order, amount: totalAmount, paidAmount: totalPaidAmount, remaining: totalRemaining });
 
-    byId("receiptOrderId").textContent = order.orderId || "-";
-    byId("receiptCustomerName").textContent = order.customerName || "-";
-    byId("receiptPhone").textContent = order.phone || "-";
+    const receiptOrderIdEl = byId("receiptOrderId");
+    if (receiptOrderIdEl) receiptOrderIdEl.textContent = order.orderId || "-";
+    const receiptCustomerNameEl = byId("receiptCustomerName");
+    if (receiptCustomerNameEl) receiptCustomerNameEl.textContent = order.customerName || "-";
+    const receiptPhoneEl = byId("receiptPhone");
+    if (receiptPhoneEl) receiptPhoneEl.textContent = order.phone || "-";
     
     const currentLang = localStorage.getItem("seemaCustLang") || "hi";
 
@@ -878,7 +920,8 @@
         const qty = item.notes && item.notes.includes("Qty:") ? ` (${item.notes})` : "";
         return `${item.orderType}${qty}`;
       }).join(", ");
-      byId("receiptOrderType").textContent = itemsText || "-";
+      const receiptOrderTypeEl = byId("receiptOrderType");
+      if (receiptOrderTypeEl) receiptOrderTypeEl.textContent = itemsText || "-";
     }
     
     // Status text in local language
@@ -891,10 +934,14 @@
     const statusObj = stepData[normalizeStatusLabel(order.orderStatus)] || { icon: "📋", labelEn: "Ordered", labelHi: "नया ऑर्डर" };
     const displayStatus = currentLang === "en" ? statusObj.labelEn : statusObj.labelHi;
 
-    byId("receiptAmount").textContent = formatCurrency(totalAmount);
-    byId("receiptPaidAmount").textContent = formatCurrency(totalPaidAmount);
-    byId("receiptRemainingAmount").textContent = formatCurrency(totalRemaining);
-    byId("receiptOrderStatus").textContent = displayStatus;
+    const receiptAmountEl = byId("receiptAmount");
+    if (receiptAmountEl) receiptAmountEl.textContent = formatCurrency(totalAmount);
+    const receiptPaidAmountEl = byId("receiptPaidAmount");
+    if (receiptPaidAmountEl) receiptPaidAmountEl.textContent = formatCurrency(totalPaidAmount);
+    const receiptRemainingAmountEl = byId("receiptRemainingAmount");
+    if (receiptRemainingAmountEl) receiptRemainingAmountEl.textContent = formatCurrency(totalRemaining);
+    const receiptOrderStatusEl = byId("receiptOrderStatus");
+    if (receiptOrderStatusEl) receiptOrderStatusEl.textContent = displayStatus;
     
     const pStatObj = paymentStatusLabel(paymentStatus, currentLang);
     const receiptPaymentStatusEl = byId("receiptPaymentStatus");
@@ -903,27 +950,31 @@
       receiptPaymentStatusEl.innerHTML = pStatObj.text;
     }
 
-    byId("receiptOrderDate").textContent = formatDate(order.orderDate);
+    const receiptOrderDateEl = byId("receiptOrderDate");
+    if (receiptOrderDateEl) receiptOrderDateEl.textContent = formatDate(order.orderDate);
     renderWorkflowProgress(order);
 
-    // Wire download button
-    const downloadReceiptBtn = byId("downloadReceiptBtn");
-    if (downloadReceiptBtn) {
-      downloadReceiptBtn.onclick = async () => {
-        try {
-          downloadReceiptBtn.disabled = true;
-          downloadReceiptBtn.style.opacity = "0.6";
-          
-          await generateCustomerReceiptImage(order, allOrderItems);
-        } catch (err) {
-          console.error("Receipt download failed:", err);
-          alert(currentLang === "en" ? "Could not download bill image." : "बिल इमेज डाउनलोड करने में असमर्थ।");
-        } finally {
-          downloadReceiptBtn.disabled = false;
-          downloadReceiptBtn.style.opacity = "1";
-        }
-      };
-    }
+    // Wire download buttons
+    const setupDownloadClick = (btnEl) => {
+      if (btnEl) {
+        btnEl.onclick = async () => {
+          try {
+            btnEl.disabled = true;
+            btnEl.style.opacity = "0.6";
+            
+            await generateCustomerReceiptImage(order, allOrderItems);
+          } catch (err) {
+            console.error("Receipt download failed:", err);
+            alert(currentLang === "en" ? "Could not download bill image." : "बिल इमेज डाउनलोड करने में असमर्थ।");
+          } finally {
+            btnEl.disabled = false;
+            btnEl.style.opacity = "1";
+          }
+        };
+      }
+    };
+    setupDownloadClick(byId("downloadReceiptBtn"));
+    setupDownloadClick(byId("downloadReceiptBtnBottom"));
 
     const paymentCard = byId("paymentCard");
     const completeMsg = byId("completeMsg");
@@ -945,29 +996,34 @@
     if (paymentStatus === "Paid") {
       toggleHidden(paymentCard, true);
       completeMsg.classList.remove("hidden");
-      completeMsg.innerHTML = currentLang === "en" ? `
+      completeMsg.innerHTML = (currentLang === "en" ? `
         <strong>Payment Complete</strong>
         <p class="muted">This order has been fully paid. No further action is required.</p>
       ` : `
         <strong>पेमेंट पूरा हो गया है</strong>
         <p class="muted">इस ऑर्डर का पूरा पेमेंट मिल चुका है। अब किसी अन्य भुगतान की आवश्यकता नहीं है।</p>
+      `) + `
+        <div style="margin-top: 16px; display: flex; justify-content: center;">
+          <button id="downloadReceiptBtnPaid" class="btn btn-secondary touch" type="button">📥 Download Bill <span class="btn-hi">/ बिल डाउनलोड</span></button>
+        </div>
       `;
+      setupDownloadClick(document.getElementById("downloadReceiptBtnPaid"));
     } else {
       const due = paymentStatus === "Partially Paid" ? totalRemaining : totalAmount;
-      qrAmount.textContent = formatCurrency(due);
+      if (qrAmount) qrAmount.textContent = formatCurrency(due);
       
       if (paymentStatus === "Partially Paid") {
-        paymentHeading.textContent = currentLang === "en" ? "Pay Remaining" : "बाकी पेमेंट करें";
-        paymentText.textContent = currentLang === "en"
+        if (paymentHeading) paymentHeading.textContent = currentLang === "en" ? "Pay Remaining" : "बाकी पेमेंट करें";
+        if (paymentText) paymentText.textContent = currentLang === "en"
           ? `₹${due} remains for this order. Tap the payment button or pay directly to the UPI ID below.`
           : `ऑर्डर का ₹${due} बाकी है। नीचे दिए बटन पर क्लिक करें या सीधे UPI आईडी पर पेमेंट करें।`;
-        payBtn.innerHTML = `Pay Remaining <span class="btn-hi">/ बाकी पेमेंट करें</span>`;
+        if (payBtn) payBtn.innerHTML = `Pay Remaining <span class="btn-hi">/ बाकी पेमेंट करें</span>`;
       } else {
-        paymentHeading.textContent = currentLang === "en" ? "Pay Now" : "अभी पेमेंट करें";
-        paymentText.textContent = currentLang === "en"
+        if (paymentHeading) paymentHeading.textContent = currentLang === "en" ? "Pay Now" : "अभी पेमेंट करें";
+        if (paymentText) paymentText.textContent = currentLang === "en"
           ? `Pay the full amount for this order using the UPI ID below.`
           : `इस ऑर्डर का पूरा पेमेंट करने के लिए नीचे दी गई UPI आईडी का इस्तेमाल करें।`;
-        payBtn.innerHTML = `Pay Now <span class="btn-hi">/ अभी पेमेंट करें</span>`;
+        if (payBtn) payBtn.innerHTML = `Pay Now <span class="btn-hi">/ अभी पेमेंट करें</span>`;
       }
       
       if (paymentUpiId) paymentUpiId.textContent = upiId;

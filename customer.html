@@ -164,9 +164,10 @@
           <p style="margin: 6px 0 0 0; font-weight: 700; color: #8b2b1a; font-size: 1.1rem;" id="paymentUpiId">Q183526070@ybl</p>
           <p class="muted" style="margin: 12px 0 0 0;"><span data-en="Amount to pay:" data-hi="पेमेंट करने की राशि:">Amount to pay:</span> <strong id="qrAmount" style="color: #b4232c; font-size: 1.15rem;">₹0</strong></p>
         </div>
-        <div class="actions" style="margin-top:12px; justify-content:center; gap: 8px;">
+        <div class="actions" style="margin-top:12px; justify-content:center; gap: 8px; flex-wrap: wrap;">
           <button id="payBtn" class="btn btn-primary touch" type="button">Open UPI App <span class="btn-hi">/ यूपीआई ऐप खोलें</span></button>
           <button id="confirmPaidBtn" class="btn btn-ghost touch" type="button">I have paid <span class="btn-hi">/ मैंने पेमेंट कर दिया</span></button>
+          <button id="downloadReceiptBtnBottom" class="btn btn-secondary touch" type="button">📥 Download Bill <span class="btn-hi">/ बिल डाउनलोड</span></button>
           <a id="waBtn" class="btn btn-secondary touch" href="#" target="_blank" rel="noopener">WhatsApp Support <span class="btn-hi">/ सहायता</span></a>
         </div>
       </div>
@@ -200,6 +201,7 @@
         <p><strong>Date / तारीख:</strong> <span id="rDate">-</span></p>
         <p><strong>Customer / कस्टमर:</strong> <span id="rCustName">-</span></p>
         <p><strong>Phone / फ़ोन:</strong> <span id="rPhone">-</span></p>
+        <p><strong>Status / स्थिति:</strong> <span id="rStatus">-</span></p>
       </div>
       <div class="receipt-divider"></div>
       <div class="receipt-items-section">
